@@ -4,8 +4,8 @@ import java.awt.event.*;
 import javax.swing.*;
 
 class Point3D {
-   public int x, y, z;
-   public Point3D( int X, int Y, int Z ) {
+   public double x, y, z;
+   public Point3D( double X, double Y, double Z ) {
       x = X;  y = Y;  z = Z;
    }
 }
@@ -17,9 +17,9 @@ class Edge {
    }
 }
 
-public class WireframeJApplet extends JApplet 
+public class WireframeJApplet extends JApplet
                   implements KeyListener, FocusListener, MouseListener {
-                      
+
    int width, height;
    // int mx, my;  // the most recently recorded mouse coordinates
 
@@ -29,19 +29,19 @@ public class WireframeJApplet extends JApplet
    Edge[] edges;
 
    boolean focussed = false;   // True when this applet has input focus.
-   
-   DisplayPanel canvas;  
 
-   public void init() {
+   DisplayPanel canvas;
+
+   public void init(double[] boxArr) {
       vertices = new Point3D[ 8 ];
-      vertices[0] = new Point3D( -1, -1, -1 );
-      vertices[1] = new Point3D( -1, -1,  1 );
-      vertices[2] = new Point3D( -1,  1, -1 );
-      vertices[3] = new Point3D( -1,  1,  1 );
-      vertices[4] = new Point3D(  1, -1, -1 );
-      vertices[5] = new Point3D(  1, -1,  1 );
-      vertices[6] = new Point3D(  1,  1, -1 );
-      vertices[7] = new Point3D(  1,  1,  1 );
+      vertices[0] = new Point3D( -(boxArr[0]/2), -(boxArr[1]/2), -(boxArr[2]/2) );
+      vertices[1] = new Point3D( -(boxArr[0]/2), -(boxArr[1]/2),  boxArr[2]/2 );
+      vertices[2] = new Point3D( -(boxArr[0]/2),  boxArr[1]/2, -(boxArr[2]/2) );
+      vertices[3] = new Point3D( -(boxArr[0]/2),  boxArr[1]/2,  boxArr[2]/2 );
+      vertices[4] = new Point3D(  boxArr[0]/2, -(boxArr[1]/2), -(boxArr[2]/2) );
+      vertices[5] = new Point3D(  boxArr[0]/2, -(boxArr[1]/2),  boxArr[2]/2 );
+      vertices[6] = new Point3D(  boxArr[0]/2,  boxArr[1]/2, -(boxArr[2]/2) );
+      vertices[7] = new Point3D(  boxArr[0]/2,  boxArr[1]/2,  boxArr[2]/2 );
 
       edges = new Edge[ 12 ];
       edges[ 0] = new Edge( 0, 1 );
@@ -56,21 +56,35 @@ public class WireframeJApplet extends JApplet
       edges[ 9] = new Edge( 4, 6 );
       edges[10] = new Edge( 5, 7 );
       edges[11] = new Edge( 6, 7 );
-    
-      canvas = new DisplayPanel();  // Create drawing surface and 
+
+      if (boxArr[3]!=0) {
+        divisionX = new Point3D[boxArr[3]*4];
+        divisionX[0] = new Point3D(0, -(boxArr[1]/2),-(boxArr[2]/2));
+        divisionX[1] = new Point3D(0, -(boxArr[1]/2), (boxArr[2]/2));
+        divisionX[2] = new Point3D(0, (boxArr[1]/2), (boxArr[2]/2));
+        divisionX[3] = new Point3D(0, (boxArr[1]/2), -(boxArr[2]/2));
+
+        edgesDX = new Edge[boxArr[3]*4];
+        edgesDX[ 0] = new Edge( 0, 1 );
+        edgesDX[ 1] = new Edge( 0, 3 );
+        edgesDX[ 2] = new Edge( 1, 2 );
+        edgesDX[ 3] = new Edge( 2, 3 );
+      }
+
+      canvas = new DisplayPanel();  // Create drawing surface and
       setContentPane(canvas);       //    install it as the applet's content pane.
-   
+
       canvas.addFocusListener(this);   // Set up the applet to listen for events
       canvas.addKeyListener(this);     //                          from the canvas.
       canvas.addMouseListener(this);
-      
+
    } // end init();
-   
+
    class DisplayPanel extends JPanel {
       public void paintComponent(Graphics g) {
-         super.paintComponent(g);  
+         super.paintComponent(g);
 
-         if (focussed) 
+         if (focussed)
             g.setColor(Color.cyan);
          else
             g.setColor(Color.lightGray);
@@ -104,9 +118,9 @@ public class WireframeJApplet extends JApplet
             float near = 3;  // distance from eye to near plane
             float nearToObj = 1.5f;  // distance from near plane to center of object
             for ( j = 0; j < vertices.length; ++j ) {
-               int x0 = vertices[j].x;
-               int y0 = vertices[j].y;
-               int z0 = vertices[j].z;
+               int x0 = (int)vertices[j].x;
+               int y0 = (int)vertices[j].y;
+               int z0 = (int)vertices[j].z;
 
                // compute an orthographic projection
                float x1 = cosT*x0 + sinT*z0;
@@ -134,59 +148,59 @@ public class WireframeJApplet extends JApplet
                   points[ edges[j].b ].x, points[ edges[j].b ].y
                );
             }
-         } 
-      }  // end paintComponent()    
-    } // end nested class DisplayPanel 
+         }
+      }  // end paintComponent()
+    } // end nested class DisplayPanel
 
    // ------------------- Event handling methods ----------------------
-   
+
    public void focusGained(FocusEvent evt) {
       focussed = true;
       canvas.repaint();
    }
-   
+
    public void focusLost(FocusEvent evt) {
       focussed = false;
-      canvas.repaint(); 
+      canvas.repaint();
    }
-      
-   public void keyTyped(KeyEvent evt) {  
+
+   public void keyTyped(KeyEvent evt) {
    }  // end keyTyped()
-      
-   public void keyPressed(KeyEvent evt) { 
-       
+
+   public void keyPressed(KeyEvent evt) {
+
       int key = evt.getKeyCode();  // keyboard code for the key that was pressed
-      
+
       if (key == KeyEvent.VK_LEFT) {
          azimuth += 5;
-         canvas.repaint();         
+         canvas.repaint();
       }
       else if (key == KeyEvent.VK_RIGHT) {
          azimuth -= 5;
-         canvas.repaint();         
+         canvas.repaint();
       }
       else if (key == KeyEvent.VK_UP) {
          elevation -= 5;
-         canvas.repaint();         
+         canvas.repaint();
       }
       else if (key == KeyEvent.VK_DOWN) {
-         elevation += 5;         
+         elevation += 5;
          canvas.repaint();
       }
 
    }  // end keyPressed()
 
-   public void keyReleased(KeyEvent evt) { 
+   public void keyReleased(KeyEvent evt) {
       // empty method, required by the KeyListener Interface
    }
-   
-   public void mousePressed(MouseEvent evt) {      
+
+   public void mousePressed(MouseEvent evt) {
       canvas.requestFocus();
-   }      
-   
+   }
+
    public void mouseEntered(MouseEvent evt) { }  // Required by the
    public void mouseExited(MouseEvent evt) { }   //    MouseListener
    public void mouseReleased(MouseEvent evt) { } //       interface.
    public void mouseClicked(MouseEvent evt) { }
    public void mouseDragged( MouseEvent e ) { }
-} // end class 
+} // end class
